@@ -16,8 +16,8 @@
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/Zlkcyber/teaFiBot.git
-   cd teaFiBot
+   git clone https://github.com/arcxteam/teafiwrap.git
+   cd Teafiwrap
    ```
 2. Install dependencies:
    ```bash
