@@ -1,22 +1,22 @@
 import { ethers } from "ethers";
 import log from './logger.js'
 import dotenv from "dotenv";
-import ora from 'ora'
+import ora from 'ora';
 dotenv.config();
 
 // Constants
-const CONTRACT_ADDRESS = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
+const WRAP_CONTRACT_ADDRESS = "0x1Cd0cd01c8C902AdAb3430ae04b9ea32CB309CF1"; // Kontrak tWPOL
 const RPC_URL = "https://polygon-rpc.com";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const MIN = 0.00001;
-const MAX = 0.001000;
+const MIN = 0.00001; // Minimal jumlah yang akan diproses
+const MAX = 0.001000; // Maksimal jumlah yang akan diproses
 
-// ABI 
-const ABI = [
-    "function deposit() external payable"
+// ABI untuk wrapping WPOL ke tWPOL
+const WRAP_ABI = [
+    "function wrap(uint256 amount) external" // Fungsi untuk wrapping WPOL ke tWPOL
 ];
 
-async function sendDepositTransaction() {
+async function sendWrapTransaction() {
     if (!PRIVATE_KEY) {
         log.error("❌ PRIVATE_KEY is missing. Set it in a .env file.");
         return;
@@ -25,19 +25,21 @@ async function sendDepositTransaction() {
     let spinner;
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
+    const contract = new ethers.Contract(WRAP_CONTRACT_ADDRESS, WRAP_ABI, wallet);
 
     try {
+        // Tentukan jumlah WPOL yang akan di-wrap
         const randomAmount = (Math.random() * (MAX - MIN) + MIN).toFixed(8);
-        const amountToSend = ethers.parseEther(randomAmount.toString());
+        const amountToWrap = ethers.parseUnits(randomAmount.toString(), 18); // Pastikan menggunakan unit yang benar (18 desimal untuk token)
 
-        log.info(`🔹 Wrapping ${randomAmount} POL to WPOL...`);
+        log.info(`🔹 Wrapping ${randomAmount} WPOL to tWPOL...`);
+
+        // Cek fee data
         const feeData = await provider.getFeeData();
+        const gasPrice = feeData.gasPrice ? feeData.gasPrice * 125n / 100n : undefined; // Menggunakan fee yang lebih tinggi untuk transaksi yang lebih cepat
 
-        const gasPrice = feeData.gasPrice ? feeData.gasPrice * 125n / 100n : undefined; // increase gwei 25% for fast transaction
-
-        const tx = await contract.deposit({
-            value: amountToSend,
+        // Kirim transaksi wrap
+        const tx = await contract.wrap(amountToWrap, {
             gasPrice,
         });
 
@@ -48,9 +50,11 @@ async function sendDepositTransaction() {
             setTimeout(() => reject(new Error("Transaction confirmation timeout")), 90 * 1000)
         );
 
+        // Tunggu hingga transaksi terkonfirmasi
         const receipt = await Promise.race([tx.wait(), timeout]);
         spinner.succeed(` Transaction confirmed in block: ${receipt.blockNumber}`);
-        return { txHash: tx.hash, address: wallet.address, amount: amountToSend.toString() };
+
+        return { txHash: tx.hash, address: wallet.address, amount: amountToWrap.toString() };
     } catch (error) {
         if (spinner) {
             spinner.fail(` Transaction failed: ${error.message}`);
@@ -62,4 +66,4 @@ async function sendDepositTransaction() {
     }
 }
 
-export default sendDepositTransaction;
+export default sendWrapTransaction;
