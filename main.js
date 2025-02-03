@@ -1,108 +1,21 @@
 import axios from "axios";
-import sendDepositTransaction from './utils/swap.js';
+import { ethers } from "ethers";
+import sendWrapTransaction from './utils/swap.js';
 import { formatUnits } from "ethers";
-import log from './utils/logger.js'
-import banner from './utils/banner.js'
+import log from './utils/logger.js';
+import banner from './utils/banner.js';
 
 const TOKEN_ADDRESS = {
     POL: "0x0000000000000000000000000000000000000000",
     WPOL: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+    tWPOL: "0x1Cd0cd01c8C902AdAb3430ae04b9ea32CB309CF1",
     NETWORK_ID: 137,
-    TYPE: 2 // Convert
+    TYPE: 2
 };
 
-async function getGasQuote() {
-    try {
-        const url = "https://api.tea-fi.com/transaction/gas-quote";
-        const params = {
-            chain: TOKEN_ADDRESS.NETWORK_ID,
-            txType: TOKEN_ADDRESS.TYPE,
-            gasPaymentToken: TOKEN_ADDRESS.POL,
-            neededGasPermits: 0
-        };
-
-        const response = await axios.get(url, { params });
-        const gasInNativeToken = response?.data?.gasInNativeToken || '0'
-
-        log.info("⛽ Gas In Native Token:", `${formatUnits(gasInNativeToken, 18)} POL`);
-        return gasInNativeToken;
-    } catch (error) {
-        log.error("❌ Error fetching gas:", error.response ? error.response.data : error.message);
-        return '0';
-    }
-}
-
-function getTokenSymbol(address) {
-    return Object.keys(TOKEN_ADDRESS).find(key => TOKEN_ADDRESS[key] === address) || "UNKNOWN";
-}
-
-async function sendTransaction(
-    gasFee,
-    isRetry = false,
-    retries = 5,
-    txHash,
-    address,
-    amount) {
-    if (!isRetry) {
-        try {
-            ({ txHash, address, amount } = await sendDepositTransaction());
-            if (!txHash) throw new Error("Transaction hash is undefined.");
-        } catch (error) {
-            log.error("❌ Failed to initiate transaction:", error.message);
-            return null;
-        }
-    }
-
-    log.info(`🚀 Trying to send tx report to backend:`, txHash)
-
-    const fromTokenSymbol = getTokenSymbol(TOKEN_ADDRESS.POL);
-    const toTokenSymbol = getTokenSymbol(TOKEN_ADDRESS.WPOL);
-
-    const payload = {
-        hash: txHash,
-        blockchainId: TOKEN_ADDRESS.NETWORK_ID,
-        type: TOKEN_ADDRESS.TYPE,
-        walletAddress: address,
-        fromTokenAddress: TOKEN_ADDRESS.POL,
-        toTokenAddress: TOKEN_ADDRESS.WPOL,
-        fromTokenSymbol,
-        toTokenSymbol,
-        fromAmount: amount,
-        toAmount: amount,
-        gasFeeTokenAddress: TOKEN_ADDRESS.POL,
-        gasFeeTokenSymbol: fromTokenSymbol,
-        gasFeeAmount: gasFee
-    };
-
-    try {
-        const response = await axios.post("https://api.tea-fi.com/transaction", payload);
-        log.info("✅ Transaction Report Succesfully Sent:", response?.data);
-
-        await getPoints(address);
-        return address;
-    } catch (error) {
-        log.error("❌ Failed To Send Transaction Report:", error.response?.data || error.message);
-
-        if (retries > 0) {
-            log.warn(`🔃 Retrying in 3s... (${retries - 1} attempts left)`);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            return sendTransaction(
-                gasFee,
-                true,
-                retries - 1,
-                txHash,
-                address,
-                amount
-            );
-        }
-
-        log.error("🚨 Max retries reached. Giving up or ask them to upgrade server lol😆");
-        return address;
-    }
-}
-
+// 1. FUNGSI CHECK-IN
 async function getPoints(address) {
-    log.info(`🔃 Trying to check current points...`)
+    log.info(`🔃 Trying to check current points...`);
     try {
         const response = await axios.get(`https://api.tea-fi.com/points/${address}`);
         log.info("📊 Total Points:", response?.data?.pointsAmount || 0);
@@ -115,7 +28,7 @@ async function checkInStatus(address) {
     try {
         const response = await axios.get(`https://api.tea-fi.com/wallet/check-in/current?address=${address}`);
         log.info("📅 Last CheckIn:", response?.data?.lastCheckIn || `Never check in`);
-        return response?.data?.lastCheckIn
+        return response?.data?.lastCheckIn;
     } catch (error) {
         log.error("❌ Failed to Check latest checkIn:", error.response?.data || error.message);
     }
@@ -124,41 +37,77 @@ async function checkInStatus(address) {
 async function checkIn(address) {
     try {
         const response = await axios.post(`https://api.tea-fi.com/wallet/check-in?address=${address}`, {});
-        log.info("✅ Check-In Succesfully:", response.data);
+        log.info("✅ Check-In Successfully:", response.data);
     } catch (error) {
         log.error("❌ Failed to Check-In:", error.response?.data || error.message);
     }
 }
 
 async function checkInUser(address) {
-    log.info(`📢 Trying to check latest checkin user...`)
+    if (!address) {
+        log.error("❌ Invalid address for check-in");
+        return;
+    }
+    
+    log.info(`📢 Trying to check latest checkin user...`);
     const lastCheckIn = await checkInStatus(address);
     const lastDate = new Date(lastCheckIn).getUTCDate();
     const now = new Date().getUTCDate();
-    if (lastDate !== now) {
-        log.info(`🔃 Trying to checkin...`)
+    if (lastDate !== now || !lastCheckIn) {
+        log.info(`🔃 Trying to checkin...`);
         await checkIn(address);
     } else {
-        log.info(`✅ Already checkin today...`)
+        log.info(`✅ Already checkin today...`);
     }
 }
 
+// 2. FUNGSI UTAMA
+async function getGasQuote() {
+    try {
+        const gasStationUrl = "https://gasstation.polygon.technology/v2";
+        const response = await axios.get(gasStationUrl);
+        
+        const fastGas = ethers.parseUnits(response.data.fast.maxFee.toFixed(9), "gwei");
+        const boostedGas = fastGas * 130n / 100n;
+        
+        const maxGas = ethers.parseUnits("50", "gwei");
+        const gasInNativeToken = boostedGas > maxGas ? maxGas : boostedGas;
+        
+        log.info("⛽ Using Polygon Gas Station:", `${formatUnits(gasInNativeToken, 9)} Gwei`);
+        return gasInNativeToken.toString();
+    } catch (error) {
+        log.error("❌ Error fetching gas:", error.message);
+        return ethers.parseUnits("50", "gwei").toString();
+    }
+}
+
+// 3. MAIN LOOP
 (async () => {
-    log.info(banner)
-    await new Promise(resolve => setTimeout(resolve, 5 * 1000));
+    log.info(banner);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
     let counter = 0;
-
     while (true) {
-        console.clear()
-        counter++;
-        log.info(`=X= ================ZLKCYBER================ =X=`)
-        log.info(`🔃 Processing Transaction ${counter} ( CTRL + C ) to exit..\n`)
+        try {
+            console.clear();
+            counter++;
+            log.info(`=💊 ==By:ZLKCYBER===MODIFY:Oxgr3y-CUANNODE==💊=`);
+            log.info(`🔃 Processing Transaction ${counter}\n`);
 
-        const gasFee = await getGasQuote()
-        const address = await sendTransaction(gasFee);
+            const gasFee = await getGasQuote();
 
-        await checkInUser(address)
-        log.info(`=X= ======================================== =X=`)
-        await new Promise(resolve => setTimeout(resolve, 10 * 1000));
+            // Panggil fungsi untuk wrapping WPOL ke tWPOL
+            const { address, txHash } = await sendWrapTransaction(gasFee);
+
+            if (address) {
+                await checkInUser(address);
+            }
+
+            log.info(`=💊==========BANG UDAH BANG===========💊=`);
+            await new Promise(resolve => setTimeout(resolve, 10000));
+        } catch (error) {
+            log.error("💀 Critical Error in Main Loop:", error.message);
+            await new Promise(resolve => setTimeout(resolve, 30000));
+        }
     }
 })();
