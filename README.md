@@ -24,7 +24,7 @@
    git clone https://github.com/arcxteam/teafiwrap.git
    cd Teafiwrap
    ```
-2. Install Processing Manager 2 (if not yet)
+2. Install processing manager 2 (if not yet)
    ```bash
    npm install -g pm2
    ```
@@ -37,13 +37,13 @@
     cp .env-example .env && nano .env
     ```
 5. Run at first time
-   ```bash
-   npm run start
-   ```
+    ```bash
+    npm run start
+    ```
 6.  Run at second time for PM2
-   ```bash
-   pm2 start main.js --name Teafiwrap
-   ```
+    ```bash
+    pm2 start main.js --name Teafiwrap
+    ```
 
    ![success](image-1.png)
 
