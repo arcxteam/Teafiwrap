@@ -57,6 +57,11 @@ async function sendWrapTransaction(gasFee) {
 
         const receipt = await Promise.race([tx.wait(), timeout]);
         spinner.succeed(` Transaction confirmed in block: ${receipt.blockNumber}`);
+        
+        // Delay 25 detik sebelum transaksi berikutnya
+        log.info('⏳ Waiting for 25 seconds before the next wrap...');
+        await delay(25000); // 25 detik (30000 ms)
+
         return { txHash: tx.hash, address: wallet.address, amount: amountToSend.toString() };
     } catch (error) {
         if (spinner) {
