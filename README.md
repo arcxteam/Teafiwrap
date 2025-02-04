@@ -4,8 +4,11 @@
 
 ## How to do ?
 
-- 1. Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=v6hrgs)
-- 2. Swap manual for WPOL (WMATIC) at least 50:50 POL</>WPOL
+- Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=v6hrgs)
+- Swap manual for WPOL (WMATIC) at least 50:50 POL</>WPOL
+- This script running swap/wrap WPOL </> tWPOL
+- This script auto pass daily check-in and collect point
+- You can costum on **utils/swap.js** any unwrap or token and gwei too
 
 ## Requirements
 
