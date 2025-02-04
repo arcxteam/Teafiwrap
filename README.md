@@ -1,12 +1,13 @@
 # A Completed Guides - TeaFi Bot for Getting as Interactive TX/id 
 
 ![banner](image.png)
+![IMG_1996](https://github.com/user-attachments/assets/9882ccf6-bbcc-4c96-a93e-a89b7c63021f)
 
 ## How to do ?
 
 - Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=v6hrgs)
-- Swap manual for WPOL (WMATIC) at least 50:50 POL</>WPOL
-- This script running swap/wrap WPOL </> tWPOL
+- Swap manual for **WPOL (WMATIC)** at least 50:50 `POL</>WPOL`
+- This script running swap/wrap `WPOL </> tWPOL`
 - This script auto pass daily check-in and collect point
 - You can costum on **utils/swap.js** any unwrap or token and gwei too
 
@@ -15,7 +16,7 @@
 - **Node.js**: have Node.js installed.
 - **npm**: have npm installed.
 - **Pm2** : have processing manager 2
-- **POL Balance**: Ensure you have a **POL** balance for fees gas in polygon/matic network
+- **POL Balance**: Ensure you have a **POL** balance for **gas fees** in polygon/matic network
 
 ## Setup
 
@@ -32,7 +33,7 @@
    ```bash
    npm install
    ```
-4. Fill your wallet privKey in `.env` format `PRIVATE_KEY=your_private_key`
+4. Fill your wallet privKey in `.env` format **PRIVATE_KEY=your_private_key**
     ```bash
     cp .env-example .env && nano .env
     ```
@@ -46,6 +47,7 @@
     ```
 
    ![success](image-1.png)
+   <img src="https://github.com/user-attachments/assets/e03148c6-848a-4e83-bd38-941ca923bfc8" alt="IMG_1997" width="770"/>
 
 ## Usefull Command Logs
 
