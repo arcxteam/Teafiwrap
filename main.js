@@ -115,7 +115,7 @@ async function getGasQuote() {
 // 4. MAIN LOOP
 (async () => {
     log.info(banner);
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 10000));
     
     let counter = 0;
     while (true) {
@@ -136,7 +136,7 @@ async function getGasQuote() {
             }
 
             log.info(`=💊==========BANG UDAH BANG===========💊=`);
-            await new Promise(resolve => setTimeout(resolve, 10000));
+            await new Promise(resolve => setTimeout(resolve, 25000));
         } catch (error) {
             log.error("💀 Critical Error in Main Loop:", error.message);
             await new Promise(resolve => setTimeout(resolve, 30000));
