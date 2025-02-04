@@ -5,7 +5,7 @@
 
 ## How to do ?
 
-- Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=v6hrgs)
+- Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/)
 - Swap manual for **WPOL (WMATIC)** at least 50:50 `POL</>WPOL`
 - This script running swap/wrap `WPOL </> tWPOL`
 - This script auto pass daily check-in and collect point
