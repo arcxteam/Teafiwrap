@@ -1,4 +1,4 @@
-# TeaFi Bot to getting candy 
+# A Completed Guides - TeaFi Bot for Getting as Interactive TX/id 
 
 ![banner](image.png)
 
