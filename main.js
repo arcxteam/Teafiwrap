@@ -61,7 +61,38 @@ async function checkInUser(address) {
     }
 }
 
-// 2. FUNGSI UTAMA
+// 2. FUNGSI UNTUK MELAPORKAN TRANSAKSI KE TEAFI API
+async function sendTransactionReport(txHash, address, amount, gasFee) {
+    try {
+        log.info(`🚀 Sending transaction report to TeaFi API...`);
+
+        const fromTokenSymbol = "WPOL"; // Adjust if necessary
+        const toTokenSymbol = "tWPOL"; // Adjust if necessary
+
+        const payload = {
+            hash: txHash,
+            blockchainId: TOKEN_ADDRESS.NETWORK_ID,
+            type: TOKEN_ADDRESS.TYPE,
+            walletAddress: address,
+            fromTokenAddress: TOKEN_ADDRESS.WPOL,
+            toTokenAddress: TOKEN_ADDRESS.tWPOL,
+            fromTokenSymbol,
+            toTokenSymbol,
+            fromAmount: amount,
+            toAmount: amount,
+            gasFeeTokenAddress: TOKEN_ADDRESS.WPOL,
+            gasFeeTokenSymbol: fromTokenSymbol,
+            gasFeeAmount: gasFee
+        };
+
+        const response = await axios.post("https://api.tea-fi.com/transaction", payload);
+        log.info("✅ Transaction Report Successfully Sent:", response?.data);
+    } catch (error) {
+        log.error("❌ Failed to send transaction report to TeaFi API:", error.response?.data || error.message);
+    }
+}
+
+// 3. FUNGSI UNTUK MENDAPATKAN GAS QUOTE
 async function getGasQuote() {
     try {
         const gasStationUrl = "https://gasstation.polygon.technology/v2";
@@ -70,18 +101,18 @@ async function getGasQuote() {
         const fastGas = ethers.parseUnits(response.data.fast.maxFee.toFixed(9), "gwei");
         const boostedGas = fastGas * 130n / 100n;
         
-        const maxGas = ethers.parseUnits("50", "gwei");
+        const maxGas = ethers.parseUnits("35", "gwei");
         const gasInNativeToken = boostedGas > maxGas ? maxGas : boostedGas;
         
         log.info("⛽ Using Polygon Gas Station:", `${formatUnits(gasInNativeToken, 9)} Gwei`);
         return gasInNativeToken.toString();
     } catch (error) {
         log.error("❌ Error fetching gas:", error.message);
-        return ethers.parseUnits("50", "gwei").toString();
+        return ethers.parseUnits("35", "gwei").toString();
     }
 }
 
-// 3. MAIN LOOP
+// 4. MAIN LOOP
 (async () => {
     log.info(banner);
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -91,16 +122,17 @@ async function getGasQuote() {
         try {
             console.clear();
             counter++;
-            log.info(`=💊 ==By:ZLKCYBER===MODIFY:Oxgr3y-CUANNODE==💊=`);
+            log.info(`=💊==By:ZLKCYBER===MODIFY:Oxgr3y-CUANNODE==💊=`);
             log.info(`🔃 Processing Transaction ${counter}\n`);
 
             const gasFee = await getGasQuote();
 
             // Panggil fungsi untuk wrapping WPOL ke tWPOL
-            const { address, txHash } = await sendWrapTransaction(gasFee);
+            const { address, txHash, amount } = await sendWrapTransaction(gasFee);
 
-            if (address) {
+            if (address && txHash) {
                 await checkInUser(address);
+                await sendTransactionReport(txHash, address, amount, gasFee); // Kirim laporan transaksi
             }
 
             log.info(`=💊==========BANG UDAH BANG===========💊=`);
