@@ -1,37 +1,68 @@
-# TeaFi BOT AUTO TX
+# TeaFi Bot to getting candy 
 
 ![banner](image.png)
 
-## How ?
+## How to do ?
 
-- Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=v6hrgs)
+- 1. Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=v6hrgs)
+- 2. Swap manual for WPOL (WMATIC) at least 50:50 POL</>WPOL
 
 ## Requirements
 
-- **Node.js**: Ensure you have Node.js installed.
-- **npm**: Ensure you have npm installed.
-- **POL Balance**: Ensure you have a pol balance in polygon/matic network
+- **Node.js**: have Node.js installed.
+- **npm**: have npm installed.
+- **Pm2** : have processing manager 2
+- **POL Balance**: Ensure you have a **POL** balance for fees gas in polygon/matic network
 
 ## Setup
 
-1. Clone this repository:
+1. Clone this repository
    ```bash
    git clone https://github.com/arcxteam/teafiwrap.git
    cd Teafiwrap
    ```
-2. Install dependencies:
+2. Install Processing Manager 2 (if not yet)
+   ```bash
+   npm install -g pm2
+   ```
+3. Install dependencies
    ```bash
    npm install
    ```
-3. Fill your wallet privKey in `.env` format `PRIVATE_KEY=your_private_key`
+4. Fill your wallet privKey in `.env` format `PRIVATE_KEY=your_private_key`
     ```bash
     cp .env-example .env && nano .env
     ```
-4. Run The Script:
+5. Run at first time
    ```bash
    npm run start
    ```
+6.  Run at second time for PM2
+   ```bash
+   pm2 start main.js --name Teafiwrap
+   ```
+
    ![success](image-1.png)
+
+## Usefull Command Logs
+
+- Status logs
+   ```bash
+   pm2 logs Teafiwrap
+   ```
+- Status stop/delete
+   ```bash
+   pm2 stop Teafiwrap
+   ```
+
+   ```bash
+   pm2 delete Teafiwrap
+   ```
+- Status monitor
+   ```bash
+   pm2 monit or list
+   ```
+
 ## ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 This project is licensed under the [MIT License](LICENSE).
