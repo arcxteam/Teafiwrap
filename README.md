@@ -5,11 +5,13 @@
 
 ## How to do ?
 
-- Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/)
-- Swap manual on web for **WPOL (WMATIC)** at least 50:50 `POL</>WPOL`
-- This script running swap/wrap `WPOL </> tWPOL`
+- Register here using your wallet: [https://tea-fi.com/tea-party/](https://app.tea-fi.com/?ref=bv65t2)
+- Swap manual on web for **`WPOL (WMATIC)`** at least 50:50 **`POL</>WPOL`**
+- This script running swap/wrap **`WPOL </> tWPOL`**
 - This script auto pass daily check-in and collect point
-- You can costum on **utils/swap.js** any unwrap or token and gwei too
+- This script use gas/gwei based-on API Polygon
+- This script have delay/looping with 20000ms
+- You can costum on **`utils/swap.js`** any unwrap or token
 
 ## Requirements
 
@@ -17,7 +19,7 @@
 - **npm**: have npm installed.
 - **Pm2** : have processing manager 2
 - **POL Balance**: Ensure you have a **POL** balance for **gas fees** in polygon mainnet
-- How much need POL balance? whatever, I thought starting 5 POL
+- How much need POL balance? whatever, I thought starting `5 POL`
 
 ## Setup
 
