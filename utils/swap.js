@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import log from './logger.js';
 import dotenv from "dotenv";
 import ora from 'ora';
+import axios from 'axios'; // Tambahkan axios untuk fetch gas price
 dotenv.config();
 
 // Constants
@@ -17,7 +18,35 @@ const ABI = [
     "function balanceOf(address account) external view returns (uint256)"
 ];
 
-async function sendWrapTransaction(gasFee) {
+// Fungsi untuk mendapatkan gas price yang dioptimalkan
+async function getOptimizedGasPrice() {
+    try {
+        const gasStationUrl = "https://gasstation.polygon.technology/v2";
+        const response = await axios.get(gasStationUrl);
+        
+        const fastestMaxFee = response.data.fastest.maxFee;
+        const baseGas = ethers.parseUnits(fastestMaxFee.toFixed(9), "gwei");
+        const bufferedGas = baseGas * 145n / 100n; // Tambah buffer 45%
+        
+        const dynamicMaxGas = Math.max(
+            ethers.parseUnits((fastestMaxFee * 1.5).toFixed(9), "gwei"),
+            ethers.parseUnits("50", "gwei") // Minimal 50 Gwei
+        );
+        
+        const finalGasPrice = bufferedGas > dynamicMaxGas ? bufferedGas : dynamicMaxGas;
+        
+        log.info("⛽ Optimized Gas:", `${ethers.formatUnits(finalGasPrice, 9)} Gwei`);
+        return finalGasPrice.toString();
+        
+    } catch (error) {
+        const fallbackGas = ethers.parseUnits("50", "gwei") + 
+                          BigInt(Math.floor(Math.random() * 5e9)); // Fallback 50-55 Gwei
+        log.warn("⚠️ Using fallback gas:", `${ethers.formatUnits(fallbackGas, 9)} Gwei`);
+        return fallbackGas.toString();
+    }
+}
+
+async function sendWrapTransaction() {
     if (!PRIVATE_KEY) {
         log.error("❌ PRIVATE_KEY is missing. Set it in a .env file.");
         return;
@@ -31,7 +60,7 @@ async function sendWrapTransaction(gasFee) {
     try {
         // Cek saldo WPOL
         const balance = await contract.balanceOf(wallet.address);
-        if (balance < MIN) {
+        if (balance < ethers.parseEther(MIN.toString())) {
             log.error(`❌ Not enough WPOL balance. Current balance: ${ethers.formatEther(balance)} WPOL`);
             return;
         }
@@ -40,12 +69,13 @@ async function sendWrapTransaction(gasFee) {
         const amountToSend = ethers.parseEther(randomAmount.toString());
 
         log.info(`🔹 Wrapping ${randomAmount} WPOL to tWPOL...`);
-        const feeData = await provider.getFeeData();
-        const gasPrice = feeData.gasPrice ? feeData.gasPrice * 125n / 100n : undefined; // increase gwei 25% for fast transaction
+        
+        // Gunakan fungsi optimasi gas
+        const gasPrice = await getOptimizedGasPrice();
 
         // Mengirim transaksi wrapping
         const tx = await contract.wrap(amountToSend, wallet.address, {
-            gasPrice,
+            gasPrice: gasPrice
         });
 
         log.info(`📜 Transaction Sent at hash: ${tx.hash}`);
@@ -60,9 +90,13 @@ async function sendWrapTransaction(gasFee) {
         
         // Delay 25 detik sebelum transaksi berikutnya
         log.info('⏳ Waiting for 25 seconds before the next wrap...');
-        await delay(25000); // 25 detik (30000 ms)
+        await new Promise(resolve => setTimeout(resolve, 25000)); // 25 detik
 
-        return { txHash: tx.hash, address: wallet.address, amount: amountToSend.toString() };
+        return { 
+            txHash: tx.hash, 
+            address: wallet.address, 
+            amount: amountToSend.toString() 
+        };
     } catch (error) {
         if (spinner) {
             spinner.fail(` Transaction failed: ${error.message}`);
@@ -70,7 +104,11 @@ async function sendWrapTransaction(gasFee) {
             log.error("❌ Error sending transaction:", error.message);
         }
 
-        return { txHash: null, address: wallet.address, amount: null };
+        return { 
+            txHash: null, 
+            address: wallet.address, 
+            amount: null 
+        };
     }
 }
 
