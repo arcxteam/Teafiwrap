@@ -98,17 +98,26 @@ async function getGasQuote() {
         const gasStationUrl = "https://gasstation.polygon.technology/v2";
         const response = await axios.get(gasStationUrl);
         
-        const fastGas = ethers.parseUnits(response.data.fast.maxFee.toFixed(9), "gwei");
-        const boostedGas = fastGas * 130n / 100n;
+        const fastestMaxFee = response.data.fastest.maxFee;
+        const baseGas = ethers.parseUnits(fastestMaxFee.toFixed(9), "gwei");
+        const bufferedGas = baseGas * 145n / 100n;
         
-        const maxGas = ethers.parseUnits("35", "gwei");
-        const gasInNativeToken = boostedGas > maxGas ? maxGas : boostedGas;
+        const dynamicMaxGas = Math.max(
+            ethers.parseUnits((fastestMaxFee * 1.5).toFixed(9), "gwei"),
+            ethers.parseUnits("50", "gwei")
+        );
         
-        log.info("⛽ Using Polygon Gas Station:", `${formatUnits(gasInNativeToken, 9)} Gwei`);
-        return gasInNativeToken.toString();
+        const finalGasPrice = bufferedGas > dynamicMaxGas ? bufferedGas : dynamicMaxGas;
+        
+        log.info("⛽ Optimized Gas:", `${ethers.formatUnits(finalGasPrice, 9)} Gwei`);
+        return finalGasPrice.toString();
+        
     } catch (error) {
-        log.error("❌ Error fetching gas:", error.message);
-        return ethers.parseUnits("35", "gwei").toString();
+        const fallbackGas = ethers.parseUnits("50", "gwei") + 
+                          BigInt(Math.floor(Math.random() * 5e9));
+        
+        log.warn("⚠️ Using fallback gas:", `${ethers.formatUnits(fallbackGas, 9)} Gwei`);
+        return fallbackGas.toString();
     }
 }
 
